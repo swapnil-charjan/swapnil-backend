@@ -4,9 +4,11 @@ import { User } from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 
-const registerUser = asyncHandler(async (req, res) => {
-    const { username, fullname, email, password } = req.body;
-
+const registerUser = asyncHandler (async (req, res) => {
+    const { username, fullname, email, password} = req.body;
+    console.log(
+        req.body
+    )
     //Use validation for every single required field
     // if (fullname === "") {
     //     throw new ApiError(400, "fullname is required")
@@ -17,7 +19,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required")
     }
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
 
@@ -28,15 +30,22 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImgLocalPath = req.files?.coverImage[0]?.path;
+    
+    //Check avatar required
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar is file requied")
+    }
+    
+    //upload on clouldinary
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImgLocalPath)
 
-    //Check avatar required
-    if (!avatarLocalPath || !avatar) {
-        throw new ApiError(400, "Avatar is file requied")
+    //Check avatar required on clouldinary
+    if (!avatar) {
+        throw new ApiError(400, "Avatar is not upload on cloudinary")
     }
 
-    const user = User.create({
+    const user = await User.create({
         username: username.toLowerCase(),
         fullname,
         email,
@@ -58,6 +67,12 @@ const registerUser = asyncHandler(async (req, res) => {
         new ApiResponse(200, createdUser, "User registered successfully.!")
     )
 })
+
+// const registerUser = asyncHandler(async (req, res) => {
+//     res.json({
+//         message: "Ok.!"
+//     })
+// })
 
 export {
     registerUser,

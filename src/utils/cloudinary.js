@@ -1,25 +1,47 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
+// Configure Cloudinary with environment variables
 cloudinary.config({
-    cloud_name: process.env.COULDINARY_CLOUD_NAME,
-    api_key: process.env.COULDINARY_API_KEY,
-    api_secret: process.env.COULDINARY_API_SRCRESTE
-})
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true
+});
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
-        if (!localFilePath) return null;
+        if (!localFilePath) {
+            console.error("No file path provided for upload.");
+            return null;
+        }
+
+        // Upload the file to Cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: 'auto'                                                       //uploaad the file on cloudinary 
-        })
-        console.log("File is uploaded on cloudinary", response.url)                     // file has been uploaded successfully
+            resource_type: 'auto' // Automatically detect file type (image, video, etc.)
+        });
+
+        console.log("File successfully uploaded to Cloudinary:", response.url);
+
+        // Optionally delete the file after upload if desired
+        // if (fs.existsSync(localFilePath)) {
+        //     fs.unlinkSync(localFilePath);
+        //     console.log("Temporary file deleted:", localFilePath);
+        // }
+
         return response;
+
     } catch (error) {
-        fs.unlinkSync(localFilePath)                                                     // remove the locally saved tempary file as the upload opration failed
+        console.error("Error uploading file to Cloudinary:", error);
+
+        // Optionally delete the file if upload fails
+        // if (fs.existsSync(localFilePath)) {
+        //     fs.unlinkSync(localFilePath);
+        //     console.log("Temporary file deleted:", localFilePath);
+        // }
+
         return null;
     }
-}
+};
 
-export { uploadOnCloudinary }
-
+export { uploadOnCloudinary };

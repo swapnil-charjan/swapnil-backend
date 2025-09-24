@@ -6,19 +6,18 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler (async (req, res) => {
     const { username, fullname, email, password} = req.body;
-    console.log(
-        req.body
-    )
+
     //Use validation for every single required field
     // if (fullname === "") {
     //     throw new ApiError(400, "fullname is required")
     // }
 
     //Use validation for all required fields
-    if ([username, fullname, email, password].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required")
-    }
+    // if ([username, fullname, email, password].some((fields) => fields?.trim() === "")) {
+    //     throw new ApiError(400, `All fields are required`)
+    // }
 
+    //check user with username or email
     const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
@@ -37,21 +36,23 @@ const registerUser = asyncHandler (async (req, res) => {
     }
     
     //upload on clouldinary
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImgLocalPath)
+    // const avatar = await uploadOnCloudinary(avatarLocalPath)
+    // const coverImage = await uploadOnCloudinary(coverImgLocalPath)
 
     //Check avatar required on clouldinary
-    if (!avatar) {
-        throw new ApiError(400, "Avatar is not upload on cloudinary")
-    }
+    // if (!avatar) {
+    //     throw new ApiError(400, "Avatar is not upload on cloudinary")
+    // }
 
     const user = await User.create({
-        username: username.toLowerCase(),
+        username: username,
         fullname,
         email,
         password,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || "",
+        avatar: avatarLocalPath,
+        coverImage: coverImgLocalPath || "",
+        // avatar: avatar.url,                              //If use cloudinary
+        // coverImage: coverImage?.url || "",
     })
 
     const createdUser = await User.findById(user._id).select(
@@ -76,4 +77,4 @@ const registerUser = asyncHandler (async (req, res) => {
 
 export {
     registerUser,
-}
+} 

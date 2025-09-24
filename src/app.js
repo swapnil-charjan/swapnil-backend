@@ -24,9 +24,35 @@ app.use((req, res, next) => {
 
 //routes import
 import userRouter from "./routes/user.routes.js"
-
+import { ApiError } from "./utils/ApiError.js";
 
 //routes declaration 
 app.use("/api/v1/users", userRouter)
+
+//Global error handler
+app.use((err, req, res, next) => {
+    if (err instanceof ApiError) {
+        return res.status(err.statusCode).json({
+            success: err.success,
+            message: err.message,
+            errors: err.errors,
+            data: err.data,
+        });
+    }
+
+    if (err.name === "ValidationError") {
+    const errorMessages = Object.values(err.errors).map(e => e.message);
+    return res.status(400).json({
+        success: false,
+        message: errorMessages.join(", ") // combine into one string
+    });
+}
+
+    // fallback for unexpected errors
+    return res.status(500).json({
+        success: false,
+        message: err.message || "Internal Server Error",
+    });
+});
 
 export { app }

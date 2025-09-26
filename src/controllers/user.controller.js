@@ -4,6 +4,7 @@ import { User } from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import { Subscription } from "../models/subscription.models.js";
 
 //Generate access and refresh token
 const generateAccessAndRefreshToken = async (userId) => {
@@ -28,7 +29,6 @@ const generateAccessAndRefreshToken = async (userId) => {
         throw new ApiError(500, "Something went wrong while generating tokens!..");
     }
 };
-
 
 //Register user 
 const registerUser = asyncHandler(async (req, res) => {
@@ -144,7 +144,6 @@ const loginUser = asyncHandler(async (req, res) => {
             )
         );
 });
-
 
 //Logout the user
 const LogoutUser = asyncHandler(async (req, res) => {
@@ -271,6 +270,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "Account details updated successfully!.."))
 })
 
+//Update user avatar photo
 const updateUserAvatar = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.file?.path
 
@@ -290,11 +290,12 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         { new: true }
     )
 
-     return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Avatar image uploaded successfully!.."))
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "Avatar image uploaded successfully!.."))
 })
 
+//Update user cover photo
 const updateUserCoverImage = asyncHandler(async (req, res) => {
     const coverImageLocalPath = req.file?.path
 
@@ -315,8 +316,55 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     )
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Cover image uploaded successfully!.."))
+        .status(200)
+        .json(new ApiResponse(200, user, "Cover image uploaded successfully!.."))
+})
+
+const getUserchannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params
+
+    if (!username?.trim()) {
+        throw new ApiError(400, "Username is missing!..")
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username
+            }
+        },
+        {
+            $lookup: {
+                from: "subscription",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscription",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedChannels"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                subscribedChannelsCount: {
+                    $size: "$subscribedChannels"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] }
+                    }
+                }
+            }
+        }
+    ])
 })
 
 export {
@@ -328,5 +376,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserchannelProfile
 } 

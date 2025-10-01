@@ -321,6 +321,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "Cover image uploaded successfully!.."))
 })
 
+//Get User channel profile details
 const getUserchannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params
 
@@ -368,6 +369,7 @@ const getUserchannelProfile = asyncHandler(async (req, res) => {
     ])
 })
 
+//Get watch history user videos
 const getWatchHistory = asyncHandler(async (req, res) => {
     const user = await User.aggregate([
         {
